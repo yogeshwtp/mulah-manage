@@ -1,6 +1,5 @@
 package com.example.mulahmanage.ui.main
 
-import SettingsScreen
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
@@ -27,6 +26,7 @@ import com.example.mulahmanage.ui.dashboard.AddExpenseScreen
 import com.example.mulahmanage.ui.dashboard.DashboardScreen
 import com.example.mulahmanage.ui.dashboard.DashboardViewModel
 import com.example.mulahmanage.ui.reports.ReportsScreen
+import com.example.mulahmanage.ui.settings.SettingsScreen
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
     object Dashboard : Screen("dashboard", "Home", Icons.Default.Home)
@@ -84,15 +84,7 @@ fun MainScreen(viewModel: DashboardViewModel) {
             }
             composable(Screen.AddExpense.route) {
                 AddExpenseScreen(
-                    onAddExpense = { amount, category, notes ->
-                        viewModel.addTransaction(
-                            amount = amount,
-                            type = TransactionType.EXPENSE,
-                            category = category,
-                            notes = notes
-                        )
-                        navController.popBackStack()
-                    },
+                    viewModel = viewModel,
                     onNavigateBack = {
                         navController.popBackStack()
                     }
@@ -107,4 +99,3 @@ fun MainScreen(viewModel: DashboardViewModel) {
         }
     }
 }
-

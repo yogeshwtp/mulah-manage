@@ -1,3 +1,5 @@
+package com.example.mulahmanage.ui.settings
+
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.clickable

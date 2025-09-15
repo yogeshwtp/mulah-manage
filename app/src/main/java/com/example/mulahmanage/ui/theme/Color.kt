@@ -41,3 +41,10 @@ val Pink80 = Color(0xFFEFB8C8)
 val Purple40 = Color(0xFF6650a4)
 val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
+
+val DarkJungleGreen = Color(0xFF1A1C1E) // A richer, deeper black for backgrounds
+val SlateGray = Color(0xFF2E3033)       // A soft gray for cards and surfaces
+val NeonGreen = Color(0xFF34C759)       // Your vibrant primary action color
+val LightGray = Color(0xFFEBEBF5)       // For primary text, slightly softer than pure white
+val MediumGray = Color(0xFF8A8A8E)      // For subtitles and less important text
+val ErrorRed = Color(0xFFFF453A)        // A clear, modern red for negative values
