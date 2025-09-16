@@ -1,21 +1,16 @@
 package com.example.mulahmanage.data
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TransactionDao {
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: Transaction)
 
-    // NEW FUNCTION: Deletes a specific transaction from the database.
-    @Delete
-    suspend fun deleteTransaction(transaction: Transaction)
+    // NEW: Update an existing transaction
+    @Update
+    suspend fun updateTransaction(transaction: Transaction)
 
     @Query("SELECT * FROM transactions ORDER BY date DESC")
     fun getAllTransactions(): Flow<List<Transaction>>
@@ -29,6 +24,10 @@ interface TransactionDao {
     @Query("SELECT category, SUM(amount) as total FROM transactions WHERE type = 'EXPENSE' GROUP BY category")
     fun getExpenseSumByCategory(): Flow<List<CategorySum>>
 
+    @Delete
+    suspend fun deleteTransaction(transaction: Transaction)
+
     @Query("DELETE FROM transactions")
     suspend fun clearAllTransactions()
 }
+

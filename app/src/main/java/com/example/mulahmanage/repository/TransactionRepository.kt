@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 class TransactionRepository(
     private val transactionDao: TransactionDao,
-    private val quickExpenseDao: QuickExpenseDao // Added QuickExpenseDao
+    private val quickExpenseDao: QuickExpenseDao
 ) {
     // Transaction flows
     val allTransactions: Flow<List<Transaction>> = transactionDao.getAllTransactions()
@@ -18,6 +18,11 @@ class TransactionRepository(
 
     suspend fun insert(transaction: Transaction) {
         transactionDao.insertTransaction(transaction)
+    }
+
+    // NEW: Update a transaction
+    suspend fun update(transaction: Transaction) {
+        transactionDao.updateTransaction(transaction)
     }
 
     suspend fun insertQuickExpense(quickExpense: QuickExpense) {

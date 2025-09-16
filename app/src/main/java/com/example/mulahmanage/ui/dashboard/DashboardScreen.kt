@@ -1,7 +1,9 @@
 package com.example.mulahmanage.ui.dashboard
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,11 +30,12 @@ import com.example.mulahmanage.data.TransactionType
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
-    onNavigateToAddExpense: () -> Unit
+    onNavigateToAddExpense: () -> Unit,
+    onNavigateToEditTransaction: (Int) -> Unit // New navigation action
 ) {
     val currentBalance by viewModel.currentBalance.collectAsStateWithLifecycle()
     val transactions by viewModel.allTransactions.collectAsStateWithLifecycle()
@@ -98,26 +101,34 @@ fun DashboardScreen(
                         confirmValueChange = {
                             if (it == SwipeToDismissBoxValue.EndToStart) {
                                 viewModel.deleteTransaction(transaction)
-                                return@rememberSwipeToDismissBoxState true
-                            }
-                            false
+                                true // Allow the dismiss
+                            } else false
                         }
                     )
                     SwipeToDismissBox(
                         state = dismissState,
-                        enableDismissFromEndToStart = true,
                         enableDismissFromStartToEnd = false,
-                        backgroundContent = {
-                            SwipeToDeleteBackground(dismissState = dismissState)
-                        }
+                        backgroundContent = { SwipeToDeleteBackground(dismissState = dismissState) }
                     ) {
-                        TransactionItem(transaction = transaction)
+                        // The TransactionItem is now wrapped in a modifier that detects long clicks
+                        Box(
+                            modifier = Modifier
+                                .combinedClickable(
+                                    onClick = {}, // Regular click does nothing
+                                    onLongClick = { onNavigateToEditTransaction(transaction.id) }
+                                )
+                        ) {
+                            TransactionItem(transaction = transaction)
+                        }
                     }
                 }
             }
         }
     }
 }
+
+// --- ALL HELPER COMPOSABLES AND FUNCTIONS ---
+// (No changes needed below this line, they are included for completeness)
 
 @Composable
 fun DashboardHeader(balanceVisible: Boolean, currentBalance: Double, onToggleVisibility: () -> Unit) {
@@ -269,3 +280,4 @@ private fun AddMoneyDialog(onDismiss: () -> Unit, onConfirm: (amount: Double) ->
         }
     )
 }
+
