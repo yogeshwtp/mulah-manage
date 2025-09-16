@@ -10,7 +10,7 @@ This project was built from the ground up as a learning experience in modern And
 
 | Dashboard                               | Reports                                   |
 | --------------------------------------- | ----------------------------------------- |
-| ![Dashboard Screen](./img/Screenshot_20250916_231506) | ![Reports Screen](./img/Screenshot_20250914_233134.png) |
+| ![Dashboard Screen](./img/Screenshot_20250916_231506.png) | ![Reports Screen](./img/Screenshot_20250914_233134.png) |
 
 ## ✨ Features (As of September 16, 2025)
 
