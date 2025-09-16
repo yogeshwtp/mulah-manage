@@ -10,9 +10,9 @@ This project was built from the ground up as a learning experience in modern And
 
 | Dashboard                               | Reports                                   |
 | --------------------------------------- | ----------------------------------------- |
-| ![Dashboard Screen](./img/Screenshot_20250914_233118.png) | ![Reports Screen](./img/Screenshot_20250914_233134.png) |
+| ![Dashboard Screen](./img/Screenshot_20250916_231506) | ![Reports Screen](./img/Screenshot_20250914_233134.png) |
 
-## ✨ Features (As of September 14, 2025)
+## ✨ Features (As of September 16, 2025)
 
 This app is currently under development, but the core functionality is in place.
 
@@ -25,12 +25,12 @@ This app is currently under development, but the core functionality is in place.
     * Export all your transaction data to a `.csv` file.
     * Erase all app data to start fresh.
 * **Modern UI:** A sleek, dark-mode UI built entirely with Jetpack Compose.
+* **Edit Transaction:** Easily edit any transaction by long-pressing on it.
 
 ## 🚀 Roadmap (Future Features)
 
 The following features are planned for future development:
 
-* [ ] **Edit Transactions:** Ability to edit the amount or category of an existing entry.
 * [ ] **Advanced Filtering:** Filter the transaction list and reports by date (week, month, custom range).
 * [ ] **Savings Goals:** Set and track savings goals (e.g., "Save for a trip").
 * [ ] **Cloud Sync:** Option to back up and sync data across devices using Firebase.
