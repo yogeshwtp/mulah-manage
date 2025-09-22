@@ -17,8 +17,12 @@ class MainActivity : ComponentActivity() {
 
         // --- Dependency Setup ---
         val database = AppDatabase.getDatabase(this)
-        // The repository now needs both DAOs to be passed to it
-        val repository = TransactionRepository(database.transactionDao(), database.quickExpenseDao())
+        // This is the corrected line. It now passes all three DAOs.
+        val repository = TransactionRepository(
+            database.transactionDao(),
+            database.quickExpenseDao(),
+            database.budgetDao()
+        )
         val factory = DashboardViewModelFactory(repository)
         val viewModel: DashboardViewModel by viewModels { factory }
 

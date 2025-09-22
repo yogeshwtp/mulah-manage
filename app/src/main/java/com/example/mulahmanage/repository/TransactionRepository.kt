@@ -5,7 +5,8 @@ import kotlinx.coroutines.flow.Flow
 
 class TransactionRepository(
     private val transactionDao: TransactionDao,
-    private val quickExpenseDao: QuickExpenseDao
+    private val quickExpenseDao: QuickExpenseDao,
+    private val budgetDao: BudgetDao
 ) {
     // Transaction flows
     val allTransactions: Flow<List<Transaction>> = transactionDao.getAllTransactions()
@@ -16,11 +17,13 @@ class TransactionRepository(
     // Quick Expense flows
     val allQuickExpenses: Flow<List<QuickExpense>> = quickExpenseDao.getAllQuickExpenses()
 
+    // Budget flows
+    val allBudgets: Flow<List<Budget>> = budgetDao.getAllBudgets()
+
     suspend fun insert(transaction: Transaction) {
         transactionDao.insertTransaction(transaction)
     }
 
-    // NEW: Update a transaction
     suspend fun update(transaction: Transaction) {
         transactionDao.updateTransaction(transaction)
     }
@@ -35,6 +38,15 @@ class TransactionRepository(
 
     suspend fun clearAll() {
         transactionDao.clearAllTransactions()
+        budgetDao.clearAllBudgets() // Also clear all budgets
+    }
+
+    // Budget functions
+    suspend fun upsertBudget(budget: Budget) {
+        budgetDao.upsertBudget(budget)
+    }
+
+    suspend fun deleteBudget(category: String) {
+        budgetDao.deleteBudget(category)
     }
 }
-

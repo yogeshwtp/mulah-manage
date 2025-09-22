@@ -10,16 +10,18 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val AppDarkColorScheme = darkColorScheme(
-    primary = NeonGreen,
-    background = DarkJungleGreen,
-    surface = SlateGray,
-    surfaceVariant = SlateGray,
-    onPrimary = DarkJungleGreen,
-    onBackground = LightGray,
-    onSurface = LightGray,
-    onSurfaceVariant = MediumGray,
-    error = ErrorRed,
-    onError = DarkJungleGreen
+    primary = PrimaryGreen,
+    onPrimary = DarkBackground,
+    background = DarkBackground,
+    onBackground = TextPrimaryDark,
+    surface = DarkBackground,
+    onSurface = TextPrimaryDark,
+    surfaceVariant = SurfaceDark,
+    onSurfaceVariant = TextPrimaryDark,
+    error = RedError,
+    onError = TextPrimaryDark,
+    secondary = SurfaceDark,
+    onSecondary = TextPrimaryDark
 )
 
 @Composable
@@ -38,7 +40,8 @@ fun MulahManageTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        // Use our new custom typography
+        typography = AppTypography,
         content = content
     )
 }

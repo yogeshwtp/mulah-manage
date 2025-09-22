@@ -8,6 +8,13 @@ import com.example.mulahmanage.repository.TransactionRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+// New data class to combine budget and spending data for the UI
+data class BudgetDetail(
+    val category: String,
+    val budgetAmount: Double,
+    val amountSpent: Double
+)
+
 class DashboardViewModel(private val repository: TransactionRepository) : ViewModel() {
     // Helper extension functions
     private fun <T> Flow<List<T>>.stateInDefault(initialValue: List<T> = emptyList()): StateFlow<List<T>> {
@@ -17,6 +24,7 @@ class DashboardViewModel(private val repository: TransactionRepository) : ViewMo
             initialValue = initialValue
         )
     }
+
     private fun <T> Flow<T?>.stateInDefault(initialValue: T): StateFlow<T> {
         return this.filterNotNull().stateIn(
             scope = viewModelScope,
@@ -25,46 +33,88 @@ class DashboardViewModel(private val repository: TransactionRepository) : ViewMo
         )
     }
 
-    // StateFlows
+    // Existing StateFlows
     val allTransactions: StateFlow<List<Transaction>> = repository.allTransactions.stateInDefault()
+
     val currentBalance: StateFlow<Double> =
         repository.totalIncome.combine(repository.totalExpenses) { income, expenses ->
             (income ?: 0.0) - (expenses ?: 0.0)
         }.stateInDefault(0.0)
+
     val expenseByCategory: StateFlow<List<CategorySum>> = repository.expenseByCategory.stateInDefault()
     val allQuickExpenses: StateFlow<List<QuickExpense>> = repository.allQuickExpenses.stateInDefault()
 
-    // Functions
+    // New StateFlow for Budget Details
+    val budgetDetails: StateFlow<List<BudgetDetail>> = repository.allBudgets
+        .combine(repository.expenseByCategory) { budgets, expenses ->
+            budgets.map { budget ->
+                val spent = expenses.find { it.category == budget.category }?.total ?: 0.0
+                BudgetDetail(
+                    category = budget.category,
+                    budgetAmount = budget.budgetAmount,
+                    amountSpent = spent
+                )
+            }
+        }.stateInDefault()
+
+    // Existing Transaction Functions
     fun addTransaction(amount: Double, type: TransactionType, category: String, notes: String) {
         viewModelScope.launch {
-            repository.insert(Transaction(amount = amount, type = type, category = category, notes = notes, date = System.currentTimeMillis()))
+            repository.insert(Transaction(
+                amount = amount,
+                type = type,
+                category = category,
+                notes = notes,
+                date = System.currentTimeMillis()
+            ))
         }
     }
 
-    // NEW: Update an existing transaction
     fun updateTransaction(transaction: Transaction) {
         viewModelScope.launch {
             repository.update(transaction)
         }
     }
 
-    // NEW: Get a single transaction by its ID to pre-fill the edit screen
     fun getTransaction(id: Int): Transaction? {
         return allTransactions.value.find { it.id == id }
     }
 
-    fun addQuickExpense(name: String, amount: Double, category: String) {
+    fun deleteTransaction(transaction: Transaction) {
         viewModelScope.launch {
-            repository.insertQuickExpense(QuickExpense(name = name, amount = amount, category = category))
+            repository.delete(transaction)
         }
     }
 
-    fun deleteTransaction(transaction: Transaction) {
-        viewModelScope.launch { repository.delete(transaction) }
+    // Quick Expense Functions
+    fun addQuickExpense(name: String, amount: Double, category: String) {
+        viewModelScope.launch {
+            repository.insertQuickExpense(QuickExpense(
+                name = name,
+                amount = amount,
+                category = category
+            ))
+        }
     }
 
+    // New Budget Management Functions
+    fun upsertBudget(category: String, amount: Double) {
+        viewModelScope.launch {
+            repository.upsertBudget(Budget(category, amount))
+        }
+    }
+
+    fun deleteBudget(category: String) {
+        viewModelScope.launch {
+            repository.deleteBudget(category)
+        }
+    }
+
+    // Data Management Functions
     fun clearAllData() {
-        viewModelScope.launch { repository.clearAll() }
+        viewModelScope.launch {
+            repository.clearAll()
+        }
     }
 }
 
@@ -77,4 +127,3 @@ class DashboardViewModelFactory(private val repository: TransactionRepository) :
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
-

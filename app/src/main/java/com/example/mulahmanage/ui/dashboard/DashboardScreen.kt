@@ -1,6 +1,7 @@
 package com.example.mulahmanage.ui.dashboard
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,11 +22,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.mulahmanage.R
 import com.example.mulahmanage.data.Transaction
 import com.example.mulahmanage.data.TransactionType
 import java.text.SimpleDateFormat
@@ -35,7 +39,7 @@ import java.util.*
 fun DashboardScreen(
     viewModel: DashboardViewModel,
     onNavigateToAddExpense: () -> Unit,
-    onNavigateToEditTransaction: (Int) -> Unit // New navigation action
+    onNavigateToEditTransaction: (Int) -> Unit
 ) {
     val currentBalance by viewModel.currentBalance.collectAsStateWithLifecycle()
     val transactions by viewModel.allTransactions.collectAsStateWithLifecycle()
@@ -57,10 +61,8 @@ fun DashboardScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 text = { Text("New Expense") },
-                icon = { Icon(Icons.Default.Add, contentDescription = "Add Expense") },
+                icon = { Icon(Icons.Rounded.Add, contentDescription = "Add Expense") },
                 onClick = onNavigateToAddExpense,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
             )
         }
     ) { paddingValues ->
@@ -69,20 +71,18 @@ fun DashboardScreen(
                 .padding(paddingValues)
                 .fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
                 DashboardHeader(balanceVisible, currentBalance) {
                     balanceVisible = !balanceVisible
                 }
             }
-
             item {
                 Button(onClick = { showAddMoneyDialog = true }, modifier = Modifier.fillMaxWidth()) {
                     Text("Add Pocket Money")
                 }
             }
-
             item {
                 Text(
                     "Recent Activity",
@@ -91,9 +91,16 @@ fun DashboardScreen(
                 )
             }
 
+            // Animated visibility for the empty state and the list
             if (transactions.isEmpty()) {
                 item {
-                    EmptyState()
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(animationSpec = androidx.compose.animation.core.tween(500, delayMillis = 200)),
+                        exit = fadeOut(animationSpec = androidx.compose.animation.core.tween(500))
+                    ) {
+                        EmptyState()
+                    }
                 }
             } else {
                 items(transactions, key = { it.id }) { transaction ->
@@ -101,22 +108,21 @@ fun DashboardScreen(
                         confirmValueChange = {
                             if (it == SwipeToDismissBoxValue.EndToStart) {
                                 viewModel.deleteTransaction(transaction)
-                                true // Allow the dismiss
+                                true
                             } else false
                         }
                     )
                     SwipeToDismissBox(
                         state = dismissState,
+                        modifier = Modifier.animateItemPlacement(), // Animates item reordering
                         enableDismissFromStartToEnd = false,
                         backgroundContent = { SwipeToDeleteBackground(dismissState = dismissState) }
                     ) {
-                        // The TransactionItem is now wrapped in a modifier that detects long clicks
                         Box(
-                            modifier = Modifier
-                                .combinedClickable(
-                                    onClick = {}, // Regular click does nothing
-                                    onLongClick = { onNavigateToEditTransaction(transaction.id) }
-                                )
+                            modifier = Modifier.combinedClickable(
+                                onClick = {},
+                                onLongClick = { onNavigateToEditTransaction(transaction.id) }
+                            )
                         ) {
                             TransactionItem(transaction = transaction)
                         }
@@ -126,25 +132,23 @@ fun DashboardScreen(
         }
     }
 }
-
-// --- ALL HELPER COMPOSABLES AND FUNCTIONS ---
-// (No changes needed below this line, they are included for completeness)
-
 @Composable
 fun DashboardHeader(balanceVisible: Boolean, currentBalance: Double, onToggleVisibility: () -> Unit) {
+    // Animate the balance amount when it changes
+    val animatedBalance by animateFloatAsState(targetValue = currentBalance.toFloat(), label = "balance_animation")
+
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         Text(getGreeting(), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = if (balanceVisible) "₹${String.format("%,.2f", currentBalance)}" else "₹*,***.**",
+                text = if (balanceVisible) "₹${String.format("%,.2f", animatedBalance)}" else "₹*,***.**",
                 style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.5.sp
+                letterSpacing = 1.sp
             )
             IconButton(onClick = onToggleVisibility) {
                 Icon(
-                    imageVector = if (balanceVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    imageVector = if (balanceVisible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
                     contentDescription = "Toggle Balance Visibility"
                 )
             }
@@ -190,7 +194,7 @@ fun SwipeToDeleteBackground(dismissState: SwipeToDismissBoxState) {
         contentAlignment = Alignment.CenterEnd
     ) {
         Icon(
-            Icons.Default.Delete,
+            Icons.Rounded.Delete,
             contentDescription = "Delete",
             tint = MaterialTheme.colorScheme.onErrorContainer
         )
@@ -209,8 +213,7 @@ fun TransactionItem(transaction: Transaction) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = getIconForCategory(transaction.category),
-                contentDescription = transaction.category,
+                painter = painterResource(id = getIconForCategory(transaction.category)),                contentDescription = transaction.category,
                 modifier = Modifier.size(40.dp),
                 tint = MaterialTheme.colorScheme.onSurface
             )
@@ -237,14 +240,14 @@ private fun getGreeting(): String {
     }
 }
 
-private fun getIconForCategory(category: String): ImageVector {
+private fun getIconForCategory(category: String): Int {
     return when (category.lowercase()) {
-        "food" -> Icons.Default.Fastfood
-        "transport" -> Icons.Default.Train
-        "shopping" -> Icons.Default.ShoppingBag
-        "bills" -> Icons.Default.Receipt
-        "income" -> Icons.Default.TrendingUp
-        else -> Icons.Default.Wallet
+        "food" -> R.drawable.hamburger_duotone
+        "transport" -> R.drawable.bus_duotone
+        "shopping" -> R.drawable.shopping_bag_duotone // Assuming you downloaded and imported this
+        "bills" -> R.drawable.receipt_duotone // Assuming you downloaded and imported this
+        "income" -> R.drawable.arrow_up_duotone // Assuming you downloaded and imported this
+        else -> R.drawable.wallet_duotone // Assuming you downloaded and imported this
     }
 }
 

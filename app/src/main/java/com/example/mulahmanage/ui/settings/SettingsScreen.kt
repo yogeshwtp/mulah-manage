@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.IosShare
+import androidx.compose.material.icons.rounded.DeleteForever
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -61,7 +63,7 @@ fun SettingsScreen(viewModel: DashboardViewModel) {
                 .padding(16.dp)
         ) {
             SettingsItem(
-                icon = Icons.Default.IosShare,
+                icon = Icons.Rounded.Share,
                 title = "Export All Data",
                 subtitle = "Save a CSV file of all your transactions",
                 onClick = {
@@ -72,7 +74,7 @@ fun SettingsScreen(viewModel: DashboardViewModel) {
             )
             Divider()
             SettingsItem(
-                icon = Icons.Default.DeleteForever,
+                icon = Icons.Rounded.DeleteForever,
                 title = "Erase All Data",
                 subtitle = "Permanently delete all transactions",
                 onClick = { showDeleteConfirmation = true }
