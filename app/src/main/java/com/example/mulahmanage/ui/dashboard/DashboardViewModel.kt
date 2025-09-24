@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.mulahmanage.data.*
 import com.example.mulahmanage.repository.TransactionRepository
+import com.example.mulahmanage.ui.settings.SettingsDataStore
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -15,7 +16,7 @@ data class BudgetDetail(
     val amountSpent: Double
 )
 
-class DashboardViewModel(private val repository: TransactionRepository) : ViewModel() {
+class DashboardViewModel(private val repository: TransactionRepository, private val settingsDataStore: SettingsDataStore) : ViewModel() {
     // Helper extension functions
     private fun <T> Flow<List<T>>.stateInDefault(initialValue: List<T> = emptyList()): StateFlow<List<T>> {
         return this.stateIn(
@@ -56,6 +57,9 @@ class DashboardViewModel(private val repository: TransactionRepository) : ViewMo
                 )
             }
         }.stateInDefault()
+    val themeOption: StateFlow<String> = settingsDataStore.themeOption
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), SettingsDataStore.THEME_SYSTEM)
+
 
     // Existing Transaction Functions
     fun addTransaction(amount: Double, type: TransactionType, category: String, notes: String) {
@@ -116,13 +120,19 @@ class DashboardViewModel(private val repository: TransactionRepository) : ViewMo
             repository.clearAll()
         }
     }
+    fun setThemeOption(option: String) {
+        viewModelScope.launch {
+            settingsDataStore.setThemeOption(option)
+        }
+    }
 }
 
-class DashboardViewModelFactory(private val repository: TransactionRepository) : ViewModelProvider.Factory {
+class DashboardViewModelFactory(private val repository: TransactionRepository,     private val settingsDataStore: SettingsDataStore
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(DashboardViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return DashboardViewModel(repository) as T
+            return DashboardViewModel(repository, settingsDataStore) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

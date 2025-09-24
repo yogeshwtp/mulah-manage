@@ -4,7 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mulahmanage.data.AppDatabase
+import com.example.mulahmanage.ui.settings.SettingsDataStore
 import com.example.mulahmanage.repository.TransactionRepository
 import com.example.mulahmanage.ui.dashboard.DashboardViewModel
 import com.example.mulahmanage.ui.dashboard.DashboardViewModelFactory
@@ -17,20 +21,28 @@ class MainActivity : ComponentActivity() {
 
         // --- Dependency Setup ---
         val database = AppDatabase.getDatabase(this)
+        val settingsDataStore = SettingsDataStore(this)
         // This is the corrected line. It now passes all three DAOs.
         val repository = TransactionRepository(
             database.transactionDao(),
             database.quickExpenseDao(),
             database.budgetDao()
         )
-        val factory = DashboardViewModelFactory(repository)
+
+        val factory = DashboardViewModelFactory(repository, settingsDataStore)
         val viewModel: DashboardViewModel by viewModels { factory }
 
         setContent {
-            MulahManageTheme {
+            val themeOption by viewModel.themeOption.collectAsStateWithLifecycle()
+            val useDarkTheme = when (themeOption) {
+                SettingsDataStore.THEME_LIGHT -> false
+                SettingsDataStore.THEME_DARK -> true
+                else -> isSystemInDarkTheme()
+            }
+
+            MulahManageTheme(darkTheme = useDarkTheme) {
                 MainScreen(viewModel = viewModel)
             }
         }
     }
 }
-

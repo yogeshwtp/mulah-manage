@@ -1,5 +1,6 @@
 package com.example.mulahmanage.ui.dashboard
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -132,6 +133,7 @@ fun DashboardScreen(
         }
     }
 }
+@SuppressLint("DefaultLocale")
 @Composable
 fun DashboardHeader(balanceVisible: Boolean, currentBalance: Double, onToggleVisibility: () -> Unit) {
     // Animate the balance amount when it changes

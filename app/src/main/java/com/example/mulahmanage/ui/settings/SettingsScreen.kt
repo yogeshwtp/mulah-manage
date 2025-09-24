@@ -3,33 +3,56 @@ package com.example.mulahmanage.ui.settings
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.IosShare
-import androidx.compose.material.icons.rounded.DeleteForever
-import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mulahmanage.data.Transaction
 import com.example.mulahmanage.ui.dashboard.DashboardViewModel
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(viewModel: DashboardViewModel) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val transactions by viewModel.allTransactions.collectAsState()
+    val transactions by viewModel.allTransactions.collectAsStateWithLifecycle()
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     if (showDeleteConfirmation) {
@@ -53,17 +76,22 @@ fun SettingsScreen(viewModel: DashboardViewModel) {
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Settings") })
-        }
+        topBar = { TopAppBar(title = { Text("Settings") }) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
         ) {
+            // NEW: Theme selection section
+            Text("Appearance", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
+            ThemeSelector(viewModel = viewModel)
+            HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+
+            // Data Management Section
+            Text("Data Management", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 24.dp, bottom = 8.dp))
             SettingsItem(
-                icon = Icons.Rounded.Share,
+                icon = Icons.Default.IosShare,
                 title = "Export All Data",
                 subtitle = "Save a CSV file of all your transactions",
                 onClick = {
@@ -72,14 +100,35 @@ fun SettingsScreen(viewModel: DashboardViewModel) {
                     }
                 }
             )
-            Divider()
+            HorizontalDivider()
             SettingsItem(
-                icon = Icons.Rounded.DeleteForever,
+                icon = Icons.Default.DeleteForever,
                 title = "Erase All Data",
                 subtitle = "Permanently delete all transactions",
                 onClick = { showDeleteConfirmation = true }
             )
-            Divider()
+            HorizontalDivider()
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ThemeSelector(viewModel: DashboardViewModel) {
+    val themeOption by viewModel.themeOption.collectAsStateWithLifecycle()
+    val options = listOf(SettingsDataStore.THEME_LIGHT, SettingsDataStore.THEME_DARK, SettingsDataStore.THEME_SYSTEM)
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        options.forEach { option ->
+            FilterChip(
+                selected = themeOption == option,
+                onClick = { viewModel.setThemeOption(option) },
+                label = { Text(option) },
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }
