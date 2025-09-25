@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.mulahmanage.data.SettingsDataStore
 import com.example.mulahmanage.data.Transaction
 import com.example.mulahmanage.ui.dashboard.DashboardViewModel
 import kotlinx.coroutines.launch

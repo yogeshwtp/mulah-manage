@@ -8,16 +8,19 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mulahmanage.data.AppDatabase
-import com.example.mulahmanage.ui.settings.SettingsDataStore
+import com.example.mulahmanage.data.SettingsDataStore
 import com.example.mulahmanage.repository.TransactionRepository
 import com.example.mulahmanage.ui.dashboard.DashboardViewModel
 import com.example.mulahmanage.ui.dashboard.DashboardViewModelFactory
 import com.example.mulahmanage.ui.main.MainScreen
+import com.example.mulahmanage.ui.onboarding.OnboardingScreen
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.mulahmanage.ui.theme.MulahManageTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        installSplashScreen()
 
         // --- Dependency Setup ---
         val database = AppDatabase.getDatabase(this)
@@ -34,6 +37,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val themeOption by viewModel.themeOption.collectAsStateWithLifecycle()
+            val hasCompletedOnboarding by viewModel.hasCompletedOnboarding.collectAsStateWithLifecycle()
             val useDarkTheme = when (themeOption) {
                 SettingsDataStore.THEME_LIGHT -> false
                 SettingsDataStore.THEME_DARK -> true
@@ -41,7 +45,13 @@ class MainActivity : ComponentActivity() {
             }
 
             MulahManageTheme(darkTheme = useDarkTheme) {
-                MainScreen(viewModel = viewModel)
+                if (hasCompletedOnboarding) {
+                    MainScreen(viewModel = viewModel)
+                } else {
+                    OnboardingScreen(onCompleted = {
+                        viewModel.setOnboardingCompleted()
+                    })
+                }
             }
         }
     }

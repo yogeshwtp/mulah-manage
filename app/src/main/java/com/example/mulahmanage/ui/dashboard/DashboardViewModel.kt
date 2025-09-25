@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.mulahmanage.data.*
 import com.example.mulahmanage.repository.TransactionRepository
-import com.example.mulahmanage.ui.settings.SettingsDataStore
+import com.example.mulahmanage.data.SettingsDataStore
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -59,6 +59,8 @@ class DashboardViewModel(private val repository: TransactionRepository, private 
         }.stateInDefault()
     val themeOption: StateFlow<String> = settingsDataStore.themeOption
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), SettingsDataStore.THEME_SYSTEM)
+    val hasCompletedOnboarding: StateFlow<Boolean> = settingsDataStore.hasCompletedOnboarding
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), false)
 
 
     // Existing Transaction Functions
@@ -125,7 +127,11 @@ class DashboardViewModel(private val repository: TransactionRepository, private 
             settingsDataStore.setThemeOption(option)
         }
     }
-}
+    fun setOnboardingCompleted() {
+        viewModelScope.launch {
+            settingsDataStore.setOnboardingCompleted(true)
+        }
+    }}
 
 class DashboardViewModelFactory(private val repository: TransactionRepository,     private val settingsDataStore: SettingsDataStore
 ) : ViewModelProvider.Factory {

@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.activity.compose)
+    implementation(libs.androidx.core.splashscreen)
 
     // Room Database
     implementation(libs.room.runtime)

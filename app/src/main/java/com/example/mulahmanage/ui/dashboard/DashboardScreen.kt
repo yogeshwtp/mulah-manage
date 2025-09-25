@@ -58,15 +58,8 @@ fun DashboardScreen(
         )
     }
 
-    Scaffold(
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                text = { Text("New Expense") },
-                icon = { Icon(Icons.Rounded.Add, contentDescription = "Add Expense") },
-                onClick = onNavigateToAddExpense,
-            )
-        }
-    ) { paddingValues ->
+    Scaffold {
+ paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .padding(paddingValues)
@@ -80,8 +73,29 @@ fun DashboardScreen(
                 }
             }
             item {
-                Button(onClick = { showAddMoneyDialog = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Add Pocket Money")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = onNavigateToAddExpense,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4CAF50), // Green color
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = "Add Expense")
+                        Spacer(Modifier.width(8.dp))
+                        Text("New Expense")
+                    }
+                    OutlinedButton(
+                        onClick = { showAddMoneyDialog = true },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Add Pocket Money")
+                    }
                 }
             }
             item {
@@ -285,4 +299,3 @@ private fun AddMoneyDialog(onDismiss: () -> Unit, onConfirm: (amount: Double) ->
         }
     )
 }
-
