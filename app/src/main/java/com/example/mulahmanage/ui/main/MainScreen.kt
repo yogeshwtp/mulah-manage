@@ -6,9 +6,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -101,11 +103,23 @@ fun MainScreen(viewModel: DashboardViewModel) {
                 arguments = listOf(navArgument("transactionId") { type = NavType.IntType })
             ) { backStackEntry ->
                 val transactionId = backStackEntry.arguments?.getInt("transactionId") ?: 0
-                EditTransactionScreen(
-                    viewModel = viewModel,
-                    transactionId = transactionId,
-                    onNavigateBack = { navController.popBackStack() }
-                )
+                val allTransactions by viewModel.allTransactions.collectAsStateWithLifecycle()
+                val transactionToEdit = allTransactions.find { it.id == transactionId }
+
+                // Handle case where transaction is not found
+                if (transactionToEdit != null) {
+                    EditTransactionScreen(
+                        viewModel = viewModel,
+                        transaction = transactionToEdit,
+                        transactionId = transactionId,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                } else {
+                    // Show error or navigate back if transaction not found
+                    LaunchedEffect(Unit) {
+                        navController.popBackStack()
+                    }
+                }
             }
             composable(Screen.Reports.route) { ReportsScreen(viewModel = viewModel) }
             composable(Screen.Settings.route) { SettingsScreen(viewModel = viewModel) }

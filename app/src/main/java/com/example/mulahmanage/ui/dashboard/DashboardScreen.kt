@@ -1,20 +1,16 @@
 package com.example.mulahmanage.ui.dashboard
 
 import android.annotation.SuppressLint
-import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Visibility
-import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,7 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -33,6 +29,10 @@ import com.example.mulahmanage.R
 import com.example.mulahmanage.data.Transaction
 import com.example.mulahmanage.data.TransactionType
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -43,10 +43,16 @@ fun DashboardScreen(
     onNavigateToEditTransaction: (Int) -> Unit
 ) {
     val currentBalance by viewModel.currentBalance.collectAsStateWithLifecycle()
-    val transactions by viewModel.allTransactions.collectAsStateWithLifecycle()
-
-    var showAddMoneyDialog by remember { mutableStateOf(false) }
+    val formattedMonth by viewModel.formattedMonth.collectAsStateWithLifecycle()
+    val filteredTransactions by viewModel.filteredTransactions.collectAsStateWithLifecycle()
     var balanceVisible by remember { mutableStateOf(true) }
+    var showAddMoneyDialog by remember { mutableStateOf(false) }
+
+    val groupedTransactions = remember(filteredTransactions) {
+        filteredTransactions.groupBy {
+            Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate()
+        }
+    }
 
     if (showAddMoneyDialog) {
         AddMoneyDialog(
@@ -58,88 +64,82 @@ fun DashboardScreen(
         )
     }
 
-    Scaffold {
- paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                DashboardHeader(balanceVisible, currentBalance) {
-                    balanceVisible = !balanceVisible
-                }
-            }
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Button(
-                        onClick = onNavigateToAddExpense,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4CAF50), // Green color
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Icon(Icons.Rounded.Add, contentDescription = "Add Expense")
-                        Spacer(Modifier.width(8.dp))
-                        Text("New Expense")
-                    }
-                    OutlinedButton(
-                        onClick = { showAddMoneyDialog = true },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Add Pocket Money")
-                    }
-                }
-            }
-            item {
-                Text(
-                    "Recent Activity",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+    Scaffold { paddingValues ->
+        Column(modifier = Modifier.padding(paddingValues)) {
+            DashboardHeader(balanceVisible, currentBalance) {
+                balanceVisible = !balanceVisible
             }
 
-            // Animated visibility for the empty state and the list
-            if (transactions.isEmpty()) {
-                item {
-                    AnimatedVisibility(
-                        visible = true,
-                        enter = fadeIn(animationSpec = androidx.compose.animation.core.tween(500, delayMillis = 200)),
-                        exit = fadeOut(animationSpec = androidx.compose.animation.core.tween(500))
-                    ) {
-                        EmptyState()
-                    }
-                }
-            } else {
-                items(transactions, key = { it.id }) { transaction ->
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        confirmValueChange = {
-                            if (it == SwipeToDismissBoxValue.EndToStart) {
-                                viewModel.deleteTransaction(transaction)
-                                true
-                            } else false
-                        }
+            MonthSelector(
+                formattedMonth = formattedMonth,
+                onPrevious = { viewModel.selectPreviousMonth() },
+                onNext = { viewModel.selectNextMonth() }
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = onNavigateToAddExpense,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4CAF50), // Green color
+                        contentColor = Color.White
                     )
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        modifier = Modifier.animateItemPlacement(), // Animates item reordering
-                        enableDismissFromStartToEnd = false,
-                        backgroundContent = { SwipeToDeleteBackground(dismissState = dismissState) }
-                    ) {
-                        Box(
-                            modifier = Modifier.combinedClickable(
-                                onClick = {},
-                                onLongClick = { onNavigateToEditTransaction(transaction.id) }
+                ) {
+                    Icon(Icons.Rounded.Add, contentDescription = "Add Expense")
+                    Spacer(Modifier.width(8.dp))
+                    Text("New Expense")
+                }
+                OutlinedButton(
+                    onClick = { showAddMoneyDialog = true },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Add Pocket Money")
+                }
+            }
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                if (groupedTransactions.isEmpty()) {
+                    item { EmptyState() }
+                } else {
+                    groupedTransactions.forEach { (date, transactionsOnDate) ->
+                        stickyHeader {
+                            DateHeader(date = date)
+                        }
+                        items(transactionsOnDate, key = { it.id }) { transaction ->
+                            val dismissState = rememberSwipeToDismissBoxState(
+                                confirmValueChange = {
+                                    if (it == SwipeToDismissBoxValue.EndToStart) {
+                                        viewModel.deleteTransaction(transaction)
+                                        return@rememberSwipeToDismissBoxState true
+                                    }
+                                    false
+                                }
                             )
-                        ) {
-                            TransactionItem(transaction = transaction)
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                enableDismissFromEndToStart = true,
+                                enableDismissFromStartToEnd = false,
+                                backgroundContent = {
+                                    SwipeToDeleteBackground(dismissState = dismissState)
+                                }
+                            ) {
+                                Box(modifier = Modifier.pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onLongPress = { onNavigateToEditTransaction(transaction.id) }
+                                    )
+                                }) {
+                                    TransactionItem(transaction = transaction)
+                                }
+                            }
                         }
                     }
                 }
@@ -147,13 +147,15 @@ fun DashboardScreen(
         }
     }
 }
+
 @SuppressLint("DefaultLocale")
 @Composable
 fun DashboardHeader(balanceVisible: Boolean, currentBalance: Double, onToggleVisibility: () -> Unit) {
-    // Animate the balance amount when it changes
     val animatedBalance by animateFloatAsState(targetValue = currentBalance.toFloat(), label = "balance_animation")
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier
+        .fillMaxWidth()
+        .padding(16.dp)) {
         Text(getGreeting(), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -229,7 +231,8 @@ fun TransactionItem(transaction: Transaction) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                painter = painterResource(id = getIconForCategory(transaction.category)),                contentDescription = transaction.category,
+                painter = painterResource(id = getIconForCategory(transaction.category)),
+                contentDescription = transaction.category,
                 modifier = Modifier.size(40.dp),
                 tint = MaterialTheme.colorScheme.onSurface
             )
@@ -248,6 +251,39 @@ fun TransactionItem(transaction: Transaction) {
     }
 }
 
+@Composable
+fun MonthSelector(formattedMonth: String, onPrevious: () -> Unit, onNext: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        IconButton(onClick = onPrevious) { Icon(Icons.Rounded.ChevronLeft, "Previous Month") }
+        Text(formattedMonth, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        IconButton(onClick = onNext) { Icon(Icons.Rounded.ChevronRight, "Next Month") }
+    }
+}
+
+@Composable
+fun DateHeader(date: LocalDate) {
+    val dayText = when {
+        date.isEqual(LocalDate.now()) -> "Today"
+        date.isEqual(LocalDate.now().minusDays(1)) -> "Yesterday"
+        else -> date.format(DateTimeFormatter.ofPattern("EEEE, dd MMM"))
+    }
+    Text(
+        text = dayText,
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(vertical = 8.dp, horizontal = 16.dp)
+    )
+}
+
 private fun getGreeting(): String {
     return when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
         in 0..11 -> "Good Morning! ☀️"
@@ -260,10 +296,10 @@ private fun getIconForCategory(category: String): Int {
     return when (category.lowercase()) {
         "food" -> R.drawable.hamburger_duotone
         "transport" -> R.drawable.bus_duotone
-        "shopping" -> R.drawable.shopping_bag_duotone // Assuming you downloaded and imported this
-        "bills" -> R.drawable.receipt_duotone // Assuming you downloaded and imported this
-        "income" -> R.drawable.arrow_up_duotone // Assuming you downloaded and imported this
-        else -> R.drawable.wallet_duotone // Assuming you downloaded and imported this
+        "shopping" -> R.drawable.shopping_bag_duotone
+        "bills" -> R.drawable.receipt_duotone
+        "income" -> R.drawable.arrow_up_duotone
+        else -> R.drawable.wallet_duotone
     }
 }
 

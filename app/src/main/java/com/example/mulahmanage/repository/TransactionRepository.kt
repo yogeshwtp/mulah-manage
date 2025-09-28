@@ -20,6 +20,12 @@ class TransactionRepository(
     // Budget flows
     val allBudgets: Flow<List<Budget>> = budgetDao.getAllBudgets()
 
+    fun getTransactionsForMonth(year: Int, month: Int): Flow<List<Transaction>> {
+        val yearString = year.toString()
+        val monthString = month.toString().padStart(2, '0') // Ensures month is "09", not "9"
+        return transactionDao.getTransactionsForMonth(yearString, monthString)
+    }
+
     suspend fun insert(transaction: Transaction) {
         transactionDao.insertTransaction(transaction)
     }

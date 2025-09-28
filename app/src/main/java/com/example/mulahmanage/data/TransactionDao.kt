@@ -24,6 +24,9 @@ interface TransactionDao {
     @Query("SELECT category, SUM(amount) as total FROM transactions WHERE type = 'EXPENSE' GROUP BY category")
     fun getExpenseSumByCategory(): Flow<List<CategorySum>>
 
+    @Query("SELECT * FROM transactions WHERE strftime('%Y', date / 1000, 'unixepoch') = :year AND strftime('%m', date / 1000, 'unixepoch') = :month ORDER BY date DESC")
+    fun getTransactionsForMonth(year: String, month: String): Flow<List<Transaction>>
+
     @Delete
     suspend fun deleteTransaction(transaction: Transaction)
 

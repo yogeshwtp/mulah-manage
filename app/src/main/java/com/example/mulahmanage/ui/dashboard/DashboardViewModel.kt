@@ -8,16 +8,22 @@ import com.example.mulahmanage.repository.TransactionRepository
 import com.example.mulahmanage.data.SettingsDataStore
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
-// New data class to combine budget and spending data for the UI
+// Data class to combine budget and spending data for the UI
 data class BudgetDetail(
     val category: String,
     val budgetAmount: Double,
     val amountSpent: Double
 )
 
-class DashboardViewModel(private val repository: TransactionRepository, private val settingsDataStore: SettingsDataStore) : ViewModel() {
-    // Helper extension functions
+class DashboardViewModel(
+    private val repository: TransactionRepository,
+    private val settingsDataStore: SettingsDataStore
+) : ViewModel() {
+
+    // Helper extension functions for StateFlow creation
     private fun <T> Flow<List<T>>.stateInDefault(initialValue: List<T> = emptyList()): StateFlow<List<T>> {
         return this.stateIn(
             scope = viewModelScope,
@@ -34,7 +40,15 @@ class DashboardViewModel(private val repository: TransactionRepository, private 
         )
     }
 
-    // Existing StateFlows
+    // NEW: Date selection functionality
+    private val _selectedDate = MutableStateFlow(LocalDate.now())
+
+    // NEW: Formatted month string for the UI header (e.g., "September 2025")
+    val formattedMonth: StateFlow<String> = _selectedDate.map {
+        it.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), "")
+
+    // Core StateFlows
     val allTransactions: StateFlow<List<Transaction>> = repository.allTransactions.stateInDefault()
 
     val currentBalance: StateFlow<Double> =
@@ -45,7 +59,14 @@ class DashboardViewModel(private val repository: TransactionRepository, private 
     val expenseByCategory: StateFlow<List<CategorySum>> = repository.expenseByCategory.stateInDefault()
     val allQuickExpenses: StateFlow<List<QuickExpense>> = repository.allQuickExpenses.stateInDefault()
 
-    // New StateFlow for Budget Details
+    // UPDATED: Filtered transactions by selected month
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
+    val filteredTransactions: StateFlow<List<Transaction>> = _selectedDate
+        .flatMapLatest { date ->
+            repository.getTransactionsForMonth(date.year, date.monthValue)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
+
+    // Budget Details StateFlow
     val budgetDetails: StateFlow<List<BudgetDetail>> = repository.allBudgets
         .combine(repository.expenseByCategory) { budgets, expenses ->
             budgets.map { budget ->
@@ -57,13 +78,24 @@ class DashboardViewModel(private val repository: TransactionRepository, private 
                 )
             }
         }.stateInDefault()
+
+    // Settings StateFlows
     val themeOption: StateFlow<String> = settingsDataStore.themeOption
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), SettingsDataStore.THEME_SYSTEM)
+
     val hasCompletedOnboarding: StateFlow<Boolean> = settingsDataStore.hasCompletedOnboarding
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), false)
 
+    // NEW: Month Navigation Functions
+    fun selectNextMonth() {
+        _selectedDate.value = _selectedDate.value.plusMonths(1)
+    }
 
-    // Existing Transaction Functions
+    fun selectPreviousMonth() {
+        _selectedDate.value = _selectedDate.value.minusMonths(1)
+    }
+
+    // Transaction Management Functions
     fun addTransaction(amount: Double, type: TransactionType, category: String, notes: String) {
         viewModelScope.launch {
             repository.insert(Transaction(
@@ -103,7 +135,7 @@ class DashboardViewModel(private val repository: TransactionRepository, private 
         }
     }
 
-    // New Budget Management Functions
+    // Budget Management Functions
     fun upsertBudget(category: String, amount: Double) {
         viewModelScope.launch {
             repository.upsertBudget(Budget(category, amount))
@@ -122,18 +154,24 @@ class DashboardViewModel(private val repository: TransactionRepository, private 
             repository.clearAll()
         }
     }
+
+    // Settings Functions
     fun setThemeOption(option: String) {
         viewModelScope.launch {
             settingsDataStore.setThemeOption(option)
         }
     }
+
     fun setOnboardingCompleted() {
         viewModelScope.launch {
             settingsDataStore.setOnboardingCompleted(true)
         }
-    }}
+    }
+}
 
-class DashboardViewModelFactory(private val repository: TransactionRepository,     private val settingsDataStore: SettingsDataStore
+class DashboardViewModelFactory(
+    private val repository: TransactionRepository,
+    private val settingsDataStore: SettingsDataStore
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(DashboardViewModel::class.java)) {
